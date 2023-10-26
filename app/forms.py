@@ -22,5 +22,5 @@ class LoginForm(FlaskForm):
 class PostForm(FlaskForm):
     title = StringField('Title', validators=[InputRequired()])
     body = TextAreaField('Body', validators=[InputRequired()])
-    submit = SubmitField('Log In')
-    
+    image_url = StringField('Image URL')
+    submit = SubmitField('Create Post')

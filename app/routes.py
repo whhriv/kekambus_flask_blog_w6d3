@@ -1,15 +1,18 @@
 from app import app, db
 from flask import render_template, redirect, url_for, flash
-from flask_login import login_user, logout_user, login_required
+from flask_login import login_user, logout_user, login_required, current_user
 # Import the SingUpForm class from forms
 from app.forms import SignUpForm, LoginForm, PostForm
 # Import the User model from models
-from app.models import User
+from app.models import User, Post
 
 # Create our first route
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # SELECT * FROM post ORDER BY date_created DESC
+    posts = db.session.execute(db.select(Post).order_by(db.desc(Post.date_created))).scalars().all()
+    
+    return render_template('index.html', posts=posts)
 
 # Create a second route
 @app.route('/signup', methods=['GET', 'POST'])
@@ -76,8 +79,20 @@ def logout():
     flash('You have successfully logged out')
     return redirect(url_for('index'))
 
-@app.route('/create-post')
+@app.route('/create-post', methods=["GET", "POST"])
 @login_required
 def create_post():
     form = PostForm()
+    if form.validate_on_submit():
+        title = form.title.data
+        body = form.body.data
+        image_url = form.image_url.data or None
+        # Create an instance of Post with form data and logged in user's ID
+        new_post = Post(title=title, body=body, user_id=current_user.id, image_url=image_url)
+        # Add to database
+        db.session.add(new_post)
+        db.session.commit()
+        #flash message
+        flash(f"{new_post.title} has been created")
+        return redirect(url_for('index'))
     return render_template('create_post.html', form=form)
